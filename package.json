@@ -1,0 +1,22 @@
+{
+  "name": "mewo",
+  "version": "1.0.0",
+  "description": "A node-based WeMo emulator intended for use with the Amazon Echo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "echo",
+    "alexa",
+    "javascript",
+    "node"
+  ],
+  "author": "Matt Hackmann",
+  "license": "WTFPL",
+  "dependencies": {
+    "freeport": "^1.0.5",
+    "handlebars": "^4.0.5",
+    "node-uuid": "^1.4.7"
+  }
+}
