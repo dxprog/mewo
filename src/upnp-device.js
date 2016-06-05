@@ -4,6 +4,8 @@ const render = require('./templating');
 const url = require('url');
 const uuid = require('node-uuid');
 
+const BINARY_STATE = /\<BinaryState>([\d])\<\/BinaryState\>/;
+
 function generateSerial(name) {
   const nameArr = name.split('');
   const idArr = nameArr.concat('mewo!'.split(''));
@@ -19,9 +21,24 @@ module.exports = class UPnpDevice {
     this.responder = responder;
   }
 
-  log(message) {
-    console.log(`[${(new Date()).toUTCString()} ${this.name}:${this.serial}] ${message}`);
+  /**
+   * Method that's called when an "on" event is received
+   *
+   * @abstract
+   */
+  on() {
+    throw new Error('Abstract method "on" must be implemented');
   }
+
+  /**
+   * Method that's called when an "off" event is received
+   *
+   * @abstract
+   */
+  off() {
+    throw new Error('Abstract method "off" must be implemented');
+  }
+
 
   /**
    * Handles direct device requests from the Echo
@@ -29,21 +46,58 @@ module.exports = class UPnpDevice {
    * @param {http.IncomingMessage} req The incoming HTTP request
    * @param {http.ServerResponse} res The outgoing response
    */
-  handleRequest(req, res) {
+  incomingRequest(req, res) {
     const headers = req.headers;
     const urlInfo = url.parse(req.url);
     if (urlInfo.path === '/setup.xml') {
       try {
-        this.discover(res);
+        this.discoverRequest(res);
       } catch (exc) {
         this.log(`There was an issue sending discovery information: ${exc.message}`);
       }
     } else {
-
+      this.parseRequest(req, res);
     }
   }
 
-  discover(res) {
+  /**
+   * Receives the data for a non-discover request
+   */
+  parseRequest(req, res) {
+    let data = [];
+    req.on('data', (chunk) => {
+      data.push(chunk);
+    }).on('end', () => {
+      const body = Buffer.concat(data).toString();
+      this.handleRequest(body, res);
+    });
+  }
+
+  /**
+   * Handles a non-discover request
+   */
+  handleRequest(body, res) {
+    const match = body.match(BINARY_STATE);
+    try {
+      (match[1] == '1' ? this.on() : this.off()).then((err) => {
+        if (!err) {
+          res.end();
+        } else {
+          res.statusCode = 500;
+        }
+        res.end();
+      });
+    } catch(exc) {
+      this.error('There was an error setting the device state', exc);
+      res.statusCode = 404;
+      res.end();
+    }
+  }
+
+  /**
+   * Sends the request for device discovery
+   */
+  discoverRequest(res) {
     this.log('Responding with discovery information');
     res.writeHead(200, {
       'Content-Type': 'xml',
@@ -53,7 +107,6 @@ module.exports = class UPnpDevice {
     });
 
     render('discover', { name: this.name, persistentUuid: this.persistentUuid }).then((data) => {
-      console.log(data);
       res.write(data);
       res.end();
     }, (err) => {
@@ -61,20 +114,9 @@ module.exports = class UPnpDevice {
     });
   }
 
-  initServer(address) {
-    return new Promise((resolve, reject) => {
-      freeport((err, port) => {
-        this.port = port;
-        this.address = address;
-        this.server = http.createServer(this.handleRequest.bind(this));
-        this.server.listen(port, address, (err) => {
-          this.log(`Virtual device listening at http://${this.address}:${this.port}`);
-          resolve();
-        });
-      });
-    });
-  }
-
+  /**
+   * Responds to a device search
+   */
   respondToSearch(sender, headers) {
     this.log(`Responding to search request`);
     const searchTarget = headers.ST;
@@ -93,5 +135,48 @@ module.exports = class UPnpDevice {
       `USN: uuid:${this.persistentUuid}::${searchTarget}`
     ];
     this.responder.sendMessage(sender, message.join('\r\n') + '\r\n\r\n');
+  }
+
+  /**
+   * Starts the HTTP server
+   */
+  initServer(address) {
+    return new Promise((resolve, reject) => {
+      freeport((err, port) => {
+        this.port = port;
+        this.address = address;
+        this.server = http.createServer(this.incomingRequest.bind(this));
+        this.server.listen(port, address, (err) => {
+          this.log(`Virtual device listening at http://${this.address}:${this.port}`);
+          resolve();
+        });
+      });
+    });
+  }
+
+  /**
+   * Generates the log stamp
+   */
+  getLogStamp() {
+    const date = new Date();
+    return `[${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()} ${this.name}:${this.serial}]`;
+  }
+
+  /**
+   * Wrapper around console.log that adds device/timestamp info
+   *
+   * @param Object[] params The parameters to log
+   */
+  log(...params) {
+    console.log(this.getLogStamp(), ...params);
+  }
+
+  /**
+   * Wrapper around console.error that adds device/timestamp info
+   *
+   * @param Object[] params The parameters to log
+   */
+  error(...params) {
+    console.error(this.getLogStamp(), ...params);
   }
 };

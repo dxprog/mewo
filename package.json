@@ -17,6 +17,7 @@
   "dependencies": {
     "freeport": "^1.0.5",
     "handlebars": "^4.0.5",
-    "node-uuid": "^1.4.7"
+    "node-uuid": "^1.4.7",
+    "rpi-gpio": "^0.7.0"
   }
 }
