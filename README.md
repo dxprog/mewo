@@ -2,17 +2,17 @@
 
 A node-based WeMo emulator intended for use with the Amazon Echo. Largely ported from the python [fauxmo](https://github.com/makermusings/fauxmo).
 
-# What?
+## What?
 
 MeWo is the jumping off point for building custom on/off home automation scripts in node. It provides an interface for connecting to an Amazon Echo and performing whatever tasks you want.
 
-# Installation
+## Installation
 
 You will need to be running node 6 or later as WeMo makes extensive use of ES6.
 
 `npm install --save wemo`
 
-# Example Usage
+## Example Usage
 
 ```javascript
 
