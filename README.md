@@ -8,15 +8,15 @@ MeWo is the jumping off point for building custom on/off home automation scripts
 
 ## Installation
 
-You will need to be running node 6 or later as WeMo makes use of ES6 features.
+You will need to be running node 6 or later as MeWo makes use of ES6 features.
 
-`npm install --save wemo`
+`npm install --save mewo`
 
 ## Example Usage
 
 ```javascript
 
-const { UPnpBroadcastResponder, MeWoDevice } = require('wemo');
+const { UPnpBroadcastResponder, MeWoDevice } = require('mewo');
 
 class MyUPnpDevice extends MeWoDevice {
   constructor(...args) {
@@ -45,10 +45,12 @@ responder.init({
   // These are the default options
   port: 1900,
   iface: 'eth0',
+
+  // You may need to play around with this...
   multicastAddress: '239.11.3.8'
 }).then(() => {
   // Create the new device with a name that will show up in the Alexa app
-  const myDevice = new MyUPnpDevice('my-upnp-device');
+  const myDevice = new MyUPnpDevice('my-upnp-device', responder);
   // Register with the UPnP responder
   responder.registerDevice(myDevice);
 });
