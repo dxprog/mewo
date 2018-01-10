@@ -4,11 +4,11 @@ A node-based WeMo emulator intended for use with the Amazon Echo. Largely ported
 
 ## What?
 
-MeWo is the jumping off point for building custom on/off home automation scripts in node. It provides an interface for connecting to an Amazon Echo and performing whatever tasks you want.
+MeWo is the jumping off point for building custom on/off home automation scripts in node. It provides an interface for connecting to an Amazon Echo and performing whatever (on/off) tasks you want.
 
 ## Installation
 
-You will need to be running node 6 or later as WeMo makes extensive use of ES6.
+You will need to be running node 6 or later as WeMo makes use of ES6 features.
 
 `npm install --save wemo`
 
@@ -16,12 +16,12 @@ You will need to be running node 6 or later as WeMo makes extensive use of ES6.
 
 ```javascript
 
-const { UPnpBroadcastResponder, UPnpDevice } = require('wemo');
+const { UPnpBroadcastResponder, MeWoDevice } = require('wemo');
 
-class MyUPnpDevice extends UPnpDevice {
-  constructor() {
+class MyUPnpDevice extends MeWoDevice {
+  constructor(...args) {
     // Super must be called
-    super(...arugments);
+    super(...args);
   }
 
   // Called when "alexa turn 'device' on" is said

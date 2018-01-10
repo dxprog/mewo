@@ -6,6 +6,11 @@ const uuid = require('node-uuid');
 
 const BINARY_STATE = /\<BinaryState>([\d])\<\/BinaryState\>/;
 
+const DISCOVERY_DEFAULTS = {
+  namespace: 'MeWo',
+  type: 'lightswitch'
+};
+
 function generateSerial(name) {
   const nameArr = name.split('');
   const idArr = nameArr.concat('mewo!'.split(''));
@@ -13,7 +18,8 @@ function generateSerial(name) {
 }
 
 module.exports = class UPnpDevice {
-  constructor(name, responder) {
+  constructor(name, responder, deviceOptions = {}) {
+    this.deviceOptions = Object.assign({}, DISCOVERY_DEFAULTS, deviceOptions);
     this.name = name;
     this.serial = generateSerial(name);
     this.persistentUuid = `Socket-1_0-${this.serial}`;
@@ -106,11 +112,15 @@ module.exports = class UPnpDevice {
       'Connection': 'close'
     });
 
-    render('discover', { name: this.name, persistentUuid: this.persistentUuid }).then((data) => {
+    render('discover', Object.assign({}, this.deviceOptions, {
+      name: this.name,
+      persistentUuid: this.persistentUuid,
+      serial: this.serial
+    })).then(data => {
       res.write(data);
       res.end();
-    }, (err) => {
-      console.error('There was an error rendering the discovery template', err);
+    }).catch(err => {
+      this.error('There was an error rendering the discovery template', err);
     });
   }
 
