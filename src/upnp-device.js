@@ -1,4 +1,5 @@
-const freeport = require('freeport');
+const bluebird = require('bluebird');
+const freeport = bluebird.promisify(require('freeport'));
 const http = require('http');
 const render = require('./templating');
 const url = require('url');
@@ -150,15 +151,22 @@ module.exports = class UPnpDevice {
   /**
    * Starts the HTTP server
    */
-  initServer(address) {
-    return new Promise((resolve, reject) => {
-      freeport((err, port) => {
-        this.port = port;
-        this.address = address;
-        this.server = http.createServer(this.incomingRequest.bind(this));
-        this.server.listen(port, address, (err) => {
-          this.log(`Virtual device listening at http://${this.address}:${this.port}`);
-          resolve();
+  initServer(address, port = this.deviceOptions.port) {
+    // Depending on whether a port was supplied, kick off the promise chain
+    const promise = !port ? freeport() : Promise.resolve(port);
+    return promise.then(port => {
+      this.port = port;
+      this.address = address;
+      this.server = http.createServer(this.incomingRequest.bind(this));
+
+      return new Promise((resolve, reject) => {
+        this.server.listen(port, address, err => {
+          if (err) {
+            reject();
+          } else {
+            this.log(`Virtual device listening at http://${this.address}:${this.port}`);
+            resolve();
+          }
         });
       });
     });

@@ -15,6 +15,7 @@
   "author": "Matt Hackmann",
   "license": "WTFPL",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "freeport": "^1.0.5",
     "handlebars": "^4.0.5",
     "node-uuid": "^1.4.7",
